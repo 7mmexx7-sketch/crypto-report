@@ -1,0 +1,25 @@
+name: Daily Crypto Report
+
+on:
+  schedule:
+    # 한국 시간(KST) 아침 8시 30분은 UTC 기준으로 전날 23시 30분입니다.
+    - cron: '30 23 * * *'
+  workflow_dispatch: # 직접 버튼 눌러서 실행해볼 수 있게 하는 옵션
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run bot
+        run: python bot.py
