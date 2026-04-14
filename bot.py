@@ -19,24 +19,30 @@ def get_crypto_report():
         upbit_res = requests.get("https://api.upbit.com/v1/ticker?markets=KRW-BTC").json()
         upbit_price = float(upbit_res[0]['trade_price'])
         
-        # 3. 바이낸스 비트코인 가격 (USDT) - 에러 방지 처리
+        # 3. 바이낸스 가격 및 환율 (김프 계산용)
         binance_res = requests.get("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT").json()
-        binance_usd = float(binance_res.get('price', 0)) # price가 없으면 0으로 가져옴
-        
-        # 4. 실시간 환율 (김프 계산용)
+        binance_usd = float(binance_res.get('price', 0))
         exch_res = requests.get("https://api.exchangerate-api.com/v4/latest/USD").json()
         usd_krw = exch_res['rates']['KRW']
-        
-        # 5. 김치 프리미엄 계산
         binance_krw = binance_usd * usd_krw
         kimp = ((upbit_price - binance_krw) / binance_krw) * 100 if binance_krw > 0 else 0
+
+        # 4. 공포 탐욕 지수 가져오기 (이게 새로 추가된 부분입니다!)
+        fng_res = requests.get("https://api.alternative.me/fng/").json()
+        fng_value = fng_res['data'][0]['value']
+        fng_status = fng_res['data'][0]['value_classification']
+        
+        # 상태를 한글로 번역
+        status_dict = {"Fear": "공포", "Extreme Fear": "극단적 공포", "Neutral": "중립", "Greed": "탐욕", "Extreme Greed": "극단적 탐욕"}
+        fng_kor = status_dict.get(fng_status, fng_status)
 
         # 리포트 조립
         today = datetime.now().strftime('%Y-%m-%d %H:%M')
         report =  f"오전 온체인 데이터 리포트 ({today})\n"
         report += f"------------------------------------\n\n"
         report += f"비트코인 가격: {upbit_price:,.0f} 원\n"
-        report += f"김치 프리미엄: {kimp:.2f} %\n\n"
+        report += f"김치 프리미엄: {kimp:.2f} %\n"
+        report += f"공포 탐욕 지수: {fng_value} ({fng_kor})\n\n" # ← 여기에 찍힙니다!
         report += f"비트코인 도미넌스: {btc_dom:.1f} %\n"
         report += f"글로벌 시가총액: ${total_mcap/1e12:.2f} T\n\n"
         report += f"------------------------------------\n"
@@ -54,4 +60,3 @@ def send_telegram(text):
 # 최종 실행
 final_msg = get_crypto_report()
 send_telegram(final_msg)
-print("✅ 리포트 전송 시도 완료!")
