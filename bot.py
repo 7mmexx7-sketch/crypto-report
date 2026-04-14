@@ -32,16 +32,17 @@ def get_crypto_report():
         status_dict = {"Fear": "공포", "Extreme Fear": "극단적 공포", "Neutral": "중립", "Greed": "탐욕", "Extreme Greed": "극단적 탐욕"}
         fng_kor = status_dict.get(fng_status, fng_status)
 
-        # 2. [디자인 변경] 깔끔하고 힘 있는 레이아웃
+        # 2. [디자인 변경] 주요 제목 진하게 강조
         today = datetime.now().strftime('%Y-%m-%d %H:%M')
         
-        report =  f"■ SELLER UNION DAILY REPORT\n"
+        report =  f"■ **SELLER UNION DAILY REPORT**\n"
         report += f"발행일시: {today}\n"
         report += f"━━━━━━━━━━━━━━━━━━\n\n"
         
+        # 핵심: ** 기호로 감싸면 텔레그램에서 진하게 나옵니다.
         report += f"**[비트코인 실시간 시세]**\n"
-        report += f"KRW: **{upbit_price:,.0f}원**\n"
-        report += f"KIMP: **{kimp:.2f}%**\n\n"
+        report += f"현재가: **{upbit_price:,.0f}원**\n"
+        report += f"프리미엄: **{kimp:.2f}%**\n\n"
         
         report += f"**[시장 주요 지표]**\n"
         report += f"공포탐욕지수: {fng_value} ({fng_kor})\n"
@@ -49,7 +50,7 @@ def get_crypto_report():
         report += f"글로벌 시총: ${total_mcap/1e12:.2f}T\n\n"
         
         report += f"━━━━━━━━━━━━━━━━━━\n"
-        report += f"셀러유니온(Seller Union) 데이터 센터\n"
+        report += f"**셀러유니온(Seller Union) 데이터 센터**\n"
         report += f"본 리포트는 실시간 데이터를 기반으로 작성되었습니다."
         
         return report
@@ -58,8 +59,10 @@ def get_crypto_report():
 
 def send_telegram(text):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    # parse_mode를 Markdown으로 설정해야 ** 기호가 작동합니다.
     params = {"chat_id": CHAT_ID, "text": text, "parse_mode": "Markdown"}
     requests.get(url, params=params)
 
+# 실행 및 전송
 final_msg = get_crypto_report()
 send_telegram(final_msg)
