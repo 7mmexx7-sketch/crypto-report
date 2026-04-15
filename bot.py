@@ -8,7 +8,7 @@ CHAT_IDS = ["-1003807258780", "-1002443665222"]
 CMC_API_KEY = "c59e814980984b0c9fdd8c1429c70fcd"
 
 # ⭐ 절대 여기에 sk- 키를 직접 적지 마세요! 금고에서 자동으로 가져옵니다.
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") 
+OPENAI_API_KEY = os.getenv("my_coin_report_bot") 
 # ------------------
 
 def get_ai_news_briefing():
