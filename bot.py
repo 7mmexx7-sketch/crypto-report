@@ -1,66 +1,38 @@
 import requests
-from datetime import datetime
 
-# --- [정보 입력] ---
-TELEGRAM_TOKEN = "8548489549:AAHkc7-PZrGHWPk-7EpyhK7CpiD4ZOu8bQ4"
-CHAT_ID = "-1003807258780"
-CMC_API_KEY = "c59e814980984b0c9fdd8c1429c70fcd"
-# ------------------
+# 질문자님의 봇 토큰
+TOKEN = "8548489549:AAHkc7-PZrGHWPk-7EpyhK7CpiD4ZOu8bQ4"
 
-def get_crypto_report():
-    try:
-        # 1. 데이터 수집
-        cmc_url = "https://pro-api.coinmarketcap.com/v1/global-metrics/quotes/latest"
-        cmc_res = requests.get(cmc_url, headers={"X-CMC_PRO_API_KEY": CMC_API_KEY}).json()
-        btc_dom = cmc_res['data']['btc_dominance']
-        total_mcap = cmc_res['data']['quote']['USD']['total_market_cap']
+def hunt_for_chat_id():
+    url = f"https://api.telegram.org/bot{TOKEN}/getUpdates"
+    res = requests.get(url).json()
+    
+    print("===================================")
+    print("🕵️‍♂️ 봇이 기억하는 모든 방 번호 탐색 결과")
+    print("===================================\n")
+    
+    found = False
+    if res.get("ok"):
+        for result in res.get("result", []):
+            # 채널인 경우
+            if "channel_post" in result:
+                chat = result["channel_post"]["chat"]
+                title = chat.get("title", "알 수 없는 채널")
+                chat_id = chat.get("id")
+                print(f"✅ [채널 발견] 이름: {title} / ID 번호: {chat_id}")
+                found = True
+            # 일반 대화방인 경우
+            elif "message" in result:
+                chat = result["message"]["chat"]
+                title = chat.get("title", chat.get("first_name", "알 수 없는 방"))
+                chat_id = chat.get("id")
+                print(f"✅ [대화방 발견] 이름: {title} / ID 번호: {chat_id}")
+                found = True
+                
+    if not found:
+        print("⚠️ 아직 봇이 새 채널의 메시지를 읽지 못했습니다.")
+        print("⚠️ 새 채널에 아무 글자나 하나 쓰고 1분 뒤에 다시 실행해보세요!")
+        
+    print("\n===================================")
 
-        upbit_res = requests.get("https://api.upbit.com/v1/ticker?markets=KRW-BTC").json()
-        upbit_price = float(upbit_res[0]['trade_price'])
-        
-        binance_res = requests.get("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT").json()
-        binance_usd = float(binance_res.get('price', 0))
-        exch_res = requests.get("https://api.exchangerate-api.com/v4/latest/USD").json()
-        usd_krw = exch_res['rates']['KRW']
-        binance_krw = binance_usd * usd_krw
-        kimp = ((upbit_price - binance_krw) / binance_krw) * 100 if binance_krw > 0 else 0
-
-        fng_res = requests.get("https://api.alternative.me/fng/").json()
-        fng_value = fng_res['data'][0]['value']
-        fng_status = fng_res['data'][0]['value_classification']
-        
-        status_dict = {"Fear": "공포", "Extreme Fear": "극단적 공포", "Neutral": "중립", "Greed": "탐욕", "Extreme Greed": "극단적 탐욕"}
-        fng_kor = status_dict.get(fng_status, fng_status)
-
-        # 2. [완벽 해결] HTML 태그(<b>)를 이용한 굵은 글씨 적용
-        today = datetime.now().strftime('%Y-%m-%d %H:%M')
-        
-        report =  f"■ <b>SELLER UNION DAILY REPORT</b>\n"
-        report += f"발행일시: {today}\n"
-        report += f"━━━━━━━━━━━━━━━━━━\n\n"
-        
-        report += f"<b>[비트코인 실시간 시세]</b>\n"
-        report += f"KRW: <b>{upbit_price:,.0f}원</b>\n"
-        report += f"KIMP: <b>{kimp:.2f}%</b>\n\n"
-        
-        report += f"<b>[시장 주요 지표]</b>\n"
-        report += f"공포탐욕지수: {fng_value} ({fng_kor})\n"
-        report += f"BTC 점유율: {btc_dom:.1f}%\n"
-        report += f"글로벌 시총: ${total_mcap/1e12:.2f}T\n\n"
-        
-        report += f"━━━━━━━━━━━━━━━━━━\n"
-        report += f"<b>셀러유니온(Seller Union) 데이터 센터</b>\n"
-        report += f"본 리포트는 실시간 데이터를 기반으로 작성되었습니다."
-        
-        return report
-    except Exception as e:
-        return f"데이터 로드 오류: {e}"
-
-def send_telegram(text):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    # parse_mode를 HTML로 변경했습니다!
-    params = {"chat_id": CHAT_ID, "text": text, "parse_mode": "HTML"}
-    requests.get(url, params=params)
-
-final_msg = get_crypto_report()
-send_telegram(final_msg)
+hunt_for_chat_id()
