@@ -5,10 +5,10 @@ import os
 # --- [정보 입력] ---
 TELEGRAM_TOKEN = "8548489549:AAHkc7-PZrGHWPk-7EpyhK7CpiD4ZOu8bQ4"
 
-# ⭐ 드디어 완성된 완벽한 배달 명부!
+# 방금 찾으신 새 방 번호가 완벽하게 적용되었습니다!
 CHAT_IDS = [
-    "-1003807258780", # 기존 마이코인 리포트 방 (2,800명)
-    "-1002443665222"  # 질문자님이 직접 캐낸 새 채널 방!
+    "-1003807258780", 
+    "-1002443665222"  
 ] 
 
 CMC_API_KEY = "c59e814980984b0c9fdd8c1429c70fcd"
@@ -53,4 +53,56 @@ def get_crypto_report():
         upbit_price = float(upbit_res[0]['trade_price'])
         
         binance_res = requests.get("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT").json()
-        bin
+        binance_usd = float(binance_res.get('price', 0))
+        exch_res = requests.get("https://api.exchangerate-api.com/v4/latest/USD").json()
+        usd_krw = exch_res['rates']['KRW']
+        binance_krw = binance_usd * usd_krw
+        kimp = ((upbit_price - binance_krw) / binance_krw) * 100 if binance_krw > 0 else 0
+
+        fng_res = requests.get("https://api.alternative.me/fng/").json()
+        fng_value = fng_res['data'][0]['value']
+        fng_status = fng_res['data'][0]['value_classification']
+        status_dict = {"Fear": "공포", "Extreme Fear": "극단적 공포", "Neutral": "중립", "Greed": "탐욕", "Extreme Greed": "극단적 탐욕"}
+        fng_kor = status_dict.get(fng_status, fng_status)
+
+        # 리포트 구성
+        today = datetime.now().strftime('%Y-%m-%d %H:%M')
+        report =  f"■ <b>MY COIN DAILY REPORT</b>\n"
+        report += f"발행일시: {today}\n"
+        report += f"━━━━━━━━━━━━━━━━━━\n\n"
+        
+        report += f"<b>[비트코인 실시간 시세]</b>\n"
+        report += f"KRW: <b>{upbit_price:,.0f}원</b>\n"
+        report += f"KIMP: <b>{kimp:.2f}%</b>\n\n"
+        
+        report += f"<b>[시장 주요 지표]</b>\n"
+        report += f"공포탐욕지수: {fng_value} ({fng_kor})\n"
+        report += f"BTC 점유율: {btc_dom:.1f}%\n"
+        report += f"글로벌 시총: ${total_mcap/1e12:.2f}T\n\n"
+        
+        report += f"🚀 <b>AI 가상자산 뉴스 요약</b>\n"
+        report += get_ai_news_briefing()
+        
+        report += f"\n━━━━━━━━━━━━━━━━━━\n"
+        report += f"<b>마이코인 리포트 데이터 센터</b>"
+        
+        return report
+    except Exception as e:
+        return f"데이터 로드 오류: {e}"
+
+def send_telegram(text):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    
+    # 두 개의 방에 순서대로 꼼꼼하게 배달합니다.
+    for chat_id in CHAT_IDS:
+        params = {
+            "chat_id": chat_id, 
+            "text": text, 
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True
+        }
+        requests.get(url, params=params)
+
+# 최종 실행
+final_msg = get_crypto_report()
+send_telegram(final_msg)
