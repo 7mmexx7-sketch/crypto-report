@@ -5,7 +5,8 @@ import xml.etree.ElementTree as ET
 
 # --- [정보 입력] ---
 TELEGRAM_TOKEN = "8548489549:AAHkc7-PZrGHWPk-7EpyhK7CpiD4ZOu8bQ4"
-CHAT_IDS = ["-1003807258780"] 
+# 총 3개의 채널 ID를 리스트에 등록했습니다.
+CHAT_IDS = ["-1003807258780", "-1002310281595", "-1003791046457"] 
 
 CMC_API_KEY = "c59e814980984b0c9fdd8c1429c70fcd"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") 
