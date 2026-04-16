@@ -33,7 +33,6 @@ def get_ai_news_briefing():
     if not OPENAI_API_KEY:
         return "AI 분석 엔진 동기화가 진행 중입니다. 잠시 후 다시 확인해 주세요."
     
-    # 두 개의 뉴스 출처 (CoinTelegraph, CoinDesk)
     ct_news = fetch_rss_news("https://cointelegraph.com/rss", limit=5)
     cd_news = fetch_rss_news("https://www.coindesk.com/arc/outboundfeeds/rss/", limit=5)
     
@@ -42,10 +41,9 @@ def get_ai_news_briefing():
     if not ct_news and not cd_news:
         return "현재 글로벌 외신망 동기화 지연으로 인해 데이터를 불러올 수 없습니다."
 
-    # 총 6개 요약 요청 (각 소스별 비중 조절)
     prompt = (
         "당신은 가상자산 리서치 분석가입니다. 제공된 뉴스 목록을 바탕으로 가장 중요한 소식 6개를 선정하여 요약하십시오. "
-        "가능하다면 각 뉴스 소스(CoinTelegraph, CoinDesk)에서 3개씩 균형 있게 선정하십시오. "
+        "반드시 CoinTelegraph에서 3개, CoinDesk에서 3개를 균형 있게 선정하십시오. "
         "결과는 한국어로 작성하며 제목은 굵게 처리하고 격식 있는 문체를 유지하십시오. "
         "이모티콘이나 감정적인 표현은 일절 배제하십시오. 각 뉴스 끝에 [원문] 링크를 포함하십시오.\n\n"
         f"{combined_news}"
@@ -102,7 +100,7 @@ def get_crypto_report():
         report += get_ai_news_briefing()
         
         report += f"\n━━━━━━━━━━━━━━━━━━\n"
-        report += f"<b>MyCoin 파이낸셜 인텔리전스 센터</b>"
+        report += f"<b>외신 인텔리전스 파이낸셜 인텔리전스 센터</b>"
         
         return report
     except:
