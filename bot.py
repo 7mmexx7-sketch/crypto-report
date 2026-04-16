@@ -3,11 +3,9 @@ from datetime import datetime
 import os
 
 # --- [정보 입력] ---
-# 1. 텔레그램 설정
 TELEGRAM_TOKEN = "8548489549:AAHkc7-PZrGHWPk-7EpyhK7CpiD4ZOu8bQ4"
 CHAT_IDS = ["-1003807258780", "-1002443665222"] 
 
-# 2. API 키 설정 (깃허브 Secrets와 연동)
 CMC_API_KEY = "c59e814980984b0c9fdd8c1429c70fcd"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") 
 # ------------------
@@ -18,17 +16,24 @@ def get_ai_news_briefing():
         return "⚠️ OpenAI API 키가 설정되지 않았습니다. 깃허브 Secrets를 확인해주세요."
     
     try:
-        # CryptoPanic에서 최신 코인 뉴스 10개 가져오기
-        news_url = "https://cryptopanic.com/api/v1/posts/?auth_token=PUBLIC&filter=hot"
-        news_data = requests.get(news_url).json()
+        # 1. 가입이 필요 없는 무료 뉴스 API로 변경 (CryptoCompare)
+        news_url = "https://min-api.cryptocompare.com/data/v2/news/?lang=EN"
+        news_res = requests.get(news_url)
+        
+        if news_res.status_code != 200:
+            return f"⚠️ 뉴스 사이트 접속 지연 (서버 응답: {news_res.status_code})"
+            
+        news_data = news_res.json()
         raw_news = ""
-        for post in news_data.get('results', [])[:10]:
+        
+        # 최신 뉴스 10개 추출
+        for post in news_data.get('Data', [])[:10]:
             raw_news += f"Title: {post['title']}\nLink: {post['url']}\n\n"
 
         if not raw_news:
             return "현재 새로운 핫 뉴스가 없습니다."
 
-        # OpenAI API 호출 (AI 요약)
+        # 2. OpenAI API 호출 (AI 요약)
         prompt = f"당신은 가상자산 전문가입니다. 아래 뉴스를 한국어로 핵심만 7개 요약하세요. 제목은 굵게 처리하고 이모지를 사용하세요. 각 뉴스 끝에 [원문] 링크를 포함하세요.\n\n{raw_news}"
         
         headers = {
@@ -45,7 +50,7 @@ def get_ai_news_briefing():
         
         # 서버 응답 확인
         if response.status_code != 200:
-            return f"⚠️ AI 요약 서비스 일시 지연 (OpenAI 서버 응답 없음: {response.status_code})\n충전된 잔액이 시스템에 반영될 때까지 약 10분~1시간이 소요될 수 있습니다."
+            return f"⚠️ AI 요약 서비스 일시 지연 (OpenAI 에러: {response.status_code})\n충전 잔액이 아직 시스템에 반영되지 않았을 수 있습니다."
             
         return response.json()['choices'][0]['message']['content']
         
