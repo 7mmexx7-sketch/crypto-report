@@ -39,7 +39,6 @@ def get_market_briefing():
     if not ct_news and not cd_news:
         return "현재 글로벌 외신망 동기화 지연으로 인해 데이터를 불러올 수 없습니다."
 
-    # 복사 에러가 나지 않도록 괄호로 단단히 묶은 프롬프트
     prompt = (
         "당신은 가상자산 리서치 수석 분석가입니다. 제공된 뉴스 목록을 바탕으로 세 가지 섹션을 작성하십시오. "
         "모든 답변에서 'AI' 또는 '인공지능'이라는 단어를 절대 사용하지 마십시오.\n\n"
@@ -95,10 +94,41 @@ def get_crypto_report():
         today = datetime.now().strftime('%Y-%m-%d %H:%M')
         ai_briefing = get_market_briefing()
         
-        # 줄바꿈 에러를 원천 차단하는 리스트 조립 방식
-        report_lines = [
-            "■ <b>MY COIN DAILY REPORT</b>",
-            f"발행일시: {today}",
-            "━━━━━━━━━━━━━━━━━━",
-            "",
-            "<b>[비트코인
+        # 복사 오류를 원천 차단하는 append 리스트 결합 방식
+        msg = []
+        msg.append("■ <b>MY COIN DAILY REPORT</b>")
+        msg.append(f"발행일시: {today}")
+        msg.append("━━━━━━━━━━━━━━━━━━")
+        msg.append("")
+        msg.append("<b>[비트코인 실시간 시세]</b>")
+        msg.append(f"KRW: <b>{upbit_price:,.0f}원</b>")
+        msg.append("")
+        msg.append("<b>[시장 주요 지표]</b>")
+        msg.append(f"공포탐욕지수: {fng_value} ({fng_status})")
+        msg.append(f"BTC 점유율: {btc_dom:.1f}%")
+        msg.append(f"글로벌 시총: ${total_mcap/1e12:.2f}T")
+        msg.append("")
+        msg.append("<b>[글로벌 크립토 인사이트 브리핑]</b>")
+        msg.append(ai_briefing)
+        msg.append("")
+        msg.append("━━━━━━━━━━━━━━━━━━")
+        msg.append("<b>외신 인텔리전스 파이낸셜 인텔리전스 센터</b>")
+        
+        return "\n".join(msg)
+    except:
+        return "데이터 수집 서버 점검 중입니다. 잠시 후 다시 확인해 주세요."
+
+def send_telegram(text):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    for chat_id in CHAT_IDS:
+        params = {
+            "chat_id": chat_id, 
+            "text": text, 
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True
+        }
+        requests.get(url, params=params)
+
+if __name__ == "__main__":
+    final_msg = get_crypto_report()
+    send_telegram(final_msg)
