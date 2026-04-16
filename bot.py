@@ -109,9 +109,9 @@ def get_crypto_report():
         msg.append("")
         msg.append("━━━━━━━━━━━━━━━━━━")
         msg.append("<b>[프라이빗 트레이딩 데스크]</b>")
-        msg.append("기관급 실시간 매매 시그널 및 1:1 심층 포트폴리오 상담을 경험하실 수 있는 특별 무료 체험 라운지를 운영 중입니다.")
-        msg.append("아래 링크를 통해 전용 채널로 입장하시어 프리미엄 혜택을 무료로 누려보십시오.")
-        msg.append("<a href=\"https://t.me/crestlab77\">[프라이빗 라이브 타점 무료 체험 및 상담 신청]</a>")
+        msg.append("실시간 핵심 매매 타점 및 포트폴리오 심층 진단.")
+        msg.append("상위 1%를 위한 VIP 라운지 핸드폰 뒷번호 4자리")
+        msg.append("<a href=\"https://t.me/crestlab77\">[VIP 라운지 무료 체험 및 1:1 상담 신청]</a>")
         msg.append("━━━━━━━━━━━━━━━━━━")
         msg.append("<b>외신 인텔리전스 파이낸셜 인텔리전스 센터</b>")
         
