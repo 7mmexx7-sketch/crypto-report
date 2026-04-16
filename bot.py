@@ -11,37 +11,47 @@ CMC_API_KEY = "c59e814980984b0c9fdd8c1429c70fcd"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") 
 # ------------------
 
+def fetch_rss_news(url, limit=5):
+    """지정한 RSS URL에서 뉴스를 가져옵니다."""
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        res = requests.get(url, headers=headers, timeout=10)
+        if res.status_code != 200:
+            return ""
+        root = ET.fromstring(res.content)
+        news_text = ""
+        for item in root.findall('.//item')[:limit]:
+            title = item.find('title').text
+            link = item.find('link').text
+            news_text += f"Title: {title}\nLink: {link}\n\n"
+        return news_text
+    except:
+        return ""
+
 def get_ai_news_briefing():
-    """글로벌 언론사(CoinTelegraph) 기사를 직접 수집하여 AI로 요약합니다."""
+    """두 곳의 외신 출처에서 뉴스를 수집하여 AI로 요약합니다."""
     if not OPENAI_API_KEY:
         return "AI 분석 엔진 동기화가 진행 중입니다. 잠시 후 다시 확인해 주세요."
     
+    # 두 개의 뉴스 출처 (CoinTelegraph, CoinDesk)
+    ct_news = fetch_rss_news("https://cointelegraph.com/rss", limit=5)
+    cd_news = fetch_rss_news("https://www.coindesk.com/arc/outboundfeeds/rss/", limit=5)
+    
+    combined_news = f"[Source: CoinTelegraph]\n{ct_news}\n[Source: CoinDesk]\n{cd_news}"
+
+    if not ct_news and not cd_news:
+        return "현재 글로벌 외신망 동기화 지연으로 인해 데이터를 불러올 수 없습니다."
+
+    # 총 6개 요약 요청 (각 소스별 비중 조절)
+    prompt = (
+        "당신은 가상자산 리서치 분석가입니다. 제공된 뉴스 목록을 바탕으로 가장 중요한 소식 6개를 선정하여 요약하십시오. "
+        "가능하다면 각 뉴스 소스(CoinTelegraph, CoinDesk)에서 3개씩 균형 있게 선정하십시오. "
+        "결과는 한국어로 작성하며 제목은 굵게 처리하고 격식 있는 문체를 유지하십시오. "
+        "이모티콘이나 감정적인 표현은 일절 배제하십시오. 각 뉴스 끝에 [원문] 링크를 포함하십시오.\n\n"
+        f"{combined_news}"
+    )
+    
     try:
-        # 코인텔레그래프 공식 RSS 피드 활용 (IP 차단 방지)
-        news_url = "https://cointelegraph.com/rss"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        }
-        news_res = requests.get(news_url, headers=headers)
-        
-        if news_res.status_code != 200:
-            return "글로벌 외신 데이터망 접속이 지연되고 있습니다. 신속히 복구하겠습니다."
-            
-        root = ET.fromstring(news_res.content)
-        raw_news = ""
-        
-        # 최신 뉴스 10개 추출
-        for item in root.findall('.//item')[:10]:
-            title = item.find('title').text
-            url = item.find('link').text
-            if title and url:
-                raw_news += f"Title: {title}\nLink: {url}\n\n"
-
-        if not raw_news.strip():
-            return "현재 시장에 주목할 만한 특이 동향 외신이 없습니다."
-
-        prompt = f"당신은 가상자산 전문가입니다. 아래 뉴스를 한국어로 핵심만 7개 요약하세요. 제목은 굵게 처리하고 격식 있는 문체로 작성하세요. 각 뉴스 끝에 [원문] 링크를 포함하세요.\n\n{raw_news}"
-        
         headers = {
             "Authorization": f"Bearer {OPENAI_API_KEY}",
             "Content-Type": "application/json"
@@ -49,18 +59,16 @@ def get_ai_news_briefing():
         payload = {
             "model": "gpt-4o-mini",
             "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.5
+            "temperature": 0.3
         }
         
         response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-        
         if response.status_code != 200:
             return "AI 분석 엔진 트래픽 과부하로 인해 요약 작업이 지연되었습니다."
             
         return response.json()['choices'][0]['message']['content']
-        
-    except Exception:
-        return "글로벌 뉴스망 동기화 지연으로 인해 요약 서비스가 일시 제한되었습니다. 빠르고 정확한 정보를 위해 신속히 정상화하겠습니다."
+    except:
+        return "글로벌 뉴스망 동기화 지연으로 인해 요약 서비스가 일시 제한되었습니다."
 
 def get_crypto_report():
     """모든 데이터를 취합하여 최종 리포트를 작성합니다."""
@@ -90,18 +98,18 @@ def get_crypto_report():
         report += f"BTC 점유율: {btc_dom:.1f}%\n"
         report += f"글로벌 시총: ${total_mcap/1e12:.2f}T\n\n"
         
-        report += f"<b>[AI 가상자산 뉴스 요약]</b>\n"
+        report += f"<b>[글로벌 크립토 인사이트 브리핑]</b>\n"
         report += get_ai_news_briefing()
         
         report += f"\n━━━━━━━━━━━━━━━━━━\n"
-        report += f"<b>마이코인 리포트 데이터 센터</b>"
+        report += f"<b>MyCoin 파이낸셜 인텔리전스 센터</b>"
         
         return report
-    except Exception:
-        return "시황 데이터 수집 서버 점검 중입니다. 잠시 후 다시 확인해 주세요."
+    except:
+        return "데이터 수집 서버 점검 중입니다. 잠시 후 다시 확인해 주세요."
 
 def send_telegram(text):
-    """지정된 모든 텔레그램 채널로 메시지를 발송합니다."""
+    """지정된 모든 텔레그램 채널로 리포트를 발송합니다."""
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     for chat_id in CHAT_IDS:
         params = {
