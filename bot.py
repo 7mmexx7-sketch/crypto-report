@@ -1,6 +1,7 @@
 import requests
 from datetime import datetime
 import os
+import xml.etree.ElementTree as ET
 
 # --- [정보 입력] ---
 TELEGRAM_TOKEN = "8548489549:AAHkc7-PZrGHWPk-7EpyhK7CpiD4ZOu8bQ4"
@@ -11,27 +12,28 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # ------------------
 
 def get_ai_news_briefing():
-    """해외 뉴스를 가져와 AI(GPT-4o-mini)로 요약합니다."""
+    """글로벌 언론사(CoinTelegraph) 기사를 직접 수집하여 AI로 요약합니다."""
     if not OPENAI_API_KEY:
         return "AI 분석 엔진 동기화가 진행 중입니다. 잠시 후 다시 확인해 주세요."
     
     try:
-        news_url = "https://min-api.cryptocompare.com/data/v2/news/?lang=EN"
-        news_res = requests.get(news_url)
+        # 코인텔레그래프 공식 RSS 피드 활용 (IP 차단 방지)
+        news_url = "https://cointelegraph.com/rss"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        news_res = requests.get(news_url, headers=headers)
         
         if news_res.status_code != 200:
             return "글로벌 외신 데이터망 접속이 지연되고 있습니다. 신속히 복구하겠습니다."
             
-        news_data = news_res.json()
-        news_list = news_data.get('Data', [])
-
-        if not isinstance(news_list, list):
-            return "현재 외신 서버의 트래픽 급증으로 요약 데이터 제공이 일시 지연되고 있습니다."
-
+        root = ET.fromstring(news_res.content)
         raw_news = ""
-        for post in news_list[:10]:
-            title = post.get('title', '')
-            url = post.get('url', '')
+        
+        # 최신 뉴스 10개 추출
+        for item in root.findall('.//item')[:10]:
+            title = item.find('title').text
+            url = item.find('link').text
             if title and url:
                 raw_news += f"Title: {title}\nLink: {url}\n\n"
 
