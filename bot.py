@@ -39,24 +39,25 @@ def get_market_briefing():
     if not ct_news and not cd_news:
         return "현재 글로벌 외신망 동기화 지연으로 인해 데이터를 불러올 수 없습니다."
 
-    prompt = (
-        "당신은 가상자산 리서치 수석 분석가입니다. 제공된 뉴스 목록을 바탕으로 세 가지 섹션을 작성하십시오. "
-        "모든 답변에서 'AI' 또는 '인공지능'이라는 단어를 절대 사용하지 마십시오.\n\n"
-        "섹션 1. 주요 뉴스 요약:\n"
-        "가장 중요한 소식 6개를 선정하여 요약하십시오. 반드시 CoinTelegraph에서 3개, CoinDesk에서 3개를 선정하십시오. "
-        "제목은 <b>제목</b> 형태로 작성하고, 뉴스 끝에 <a href=\"URL\">[상세 리포트 원문]</a> 링크를 포함하십시오.\n\n"
-        "섹션 2. 시장 종합 분석 및 전망:\n"
-        "위 6개 뉴스를 토대로 현재 가상자산 시장의 전체적인 동향과 핵심 트렌드를 3~4문장으로 요약하여 브리핑하십시오. "
-        "전문적이고 객관적인 시각을 유지하십시오.\n\n"
-        "섹션 3. 오늘의 토론 주제 (트리거 퀘스천):\n"
-        "오늘의 시장 상황과 가장 밀접하게 연관된, 투자자들의 토론을 유도할 수 있는 예리한 질문을 하나 작성하십시오. "
-        "예: '현재 비트코인의 단기 조정 국면에서, 여러분은 알트코인 비중을 늘릴 시점이라고 보십니까?'\n\n"
-        "【준수 사항】\n"
-        "1. 모든 이모티콘을 절대 사용하지 마십시오.\n"
-        "2. 격식 있고 전문적인 문체로 작성하십시오.\n"
-        "3. Markdown 기호 대신 텔레그램 HTML 태그(<b>, <a>)만 사용하십시오.\n\n"
-        f"분석 데이터:\n{combined_news}"
-    )
+    # 복사 에러 방지를 위해 삼중 따옴표(""") 적용
+    prompt = f"""당신은 가상자산 리서치 수석 분석가입니다. 제공된 뉴스 목록을 바탕으로 세 가지 섹션을 작성하십시오. 모든 답변에서 'AI' 또는 '인공지능'이라는 단어를 절대 사용하지 마십시오.
+
+섹션 1. 주요 뉴스 요약:
+가장 중요한 소식 6개를 선정하여 요약하십시오. 반드시 CoinTelegraph에서 3개, CoinDesk에서 3개를 선정하십시오. 제목은 <b>제목</b> 형태로 작성하고, 뉴스 끝에 <a href="URL">[상세 리포트 원문]</a> 링크를 포함하십시오.
+
+섹션 2. 시장 종합 분석 및 전망:
+위 6개 뉴스를 토대로 현재 가상자산 시장의 전체적인 동향과 핵심 트렌드를 3~4문장으로 요약하여 브리핑하십시오. 전문적이고 객관적인 시각을 유지하십시오.
+
+섹션 3. 오늘의 토론 주제 (트리거 퀘스천):
+오늘의 시장 상황과 가장 밀접하게 연관된, 투자자들의 토론을 유도할 수 있는 예리한 질문을 하나 작성하십시오. 예: '현재 비트코인의 단기 조정 국면에서, 여러분은 알트코인 비중을 늘릴 시점이라고 보십니까?'
+
+【준수 사항】
+1. 모든 이모티콘을 절대 사용하지 마십시오.
+2. 격식 있고 전문적인 문체로 작성하십시오.
+3. Markdown 기호 대신 텔레그램 HTML 태그(<b>, <a>)만 사용하십시오.
+
+분석 데이터:
+{combined_news}"""
     
     try:
         headers = {
@@ -69,13 +70,7 @@ def get_market_briefing():
             "temperature": 0.4
         }
         
-        # 복사 시 줄바꿈 에러를 방지하기 위해 구문을 분리했습니다.
-        response = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers=headers,
-            json=payload
-        )
-        
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
         if response.status_code != 200:
             return "분석 엔진 트래픽 과부하로 인해 요약 작업이 지연되었습니다."
             
@@ -98,13 +93,6 @@ def get_crypto_report():
         fng_status = fng_res['data'][0]['value_classification']
 
         today = datetime.now().strftime('%Y-%m-%d %H:%M')
-        report =  f"■ <b>MY COIN DAILY REPORT</b>\n"
-        report += f"발행일시: {today}\n"
-        report += f"━━━━━━━━━━━━━━━━━━\n\n"
+        ai_briefing = get_market_briefing()
         
-        report += f"<b>[비트코인 실시간 시세]</b>\n"
-        report += f"KRW: <b>{upbit_price:,.0f}원</b>\n\n"
-        
-        report += f"<b>[시장 주요 지표]</b>\n"
-        report += f"공포탐욕지수: {fng_value} ({fng_status})\n"
-        report += f"
+        # 복사 에러 원천 차단용 삼중 따옴표 리포트
