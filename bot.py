@@ -5,7 +5,6 @@ import xml.etree.ElementTree as ET
 
 # --- [정보 입력] ---
 TELEGRAM_TOKEN = "8548489549:AAHkc7-PZrGHWPk-7EpyhK7CpiD4ZOu8bQ4"
-# 원래 발송하시던 단일 방 번호로 복구되었습니다.
 CHAT_IDS = ["-1003807258780"] 
 
 CMC_API_KEY = "c59e814980984b0c9fdd8c1429c70fcd"
@@ -29,7 +28,6 @@ def fetch_rss_news(url, limit=5):
         return ""
 
 def get_market_briefing():
-    """외신 소식을 분석하여 개별 요약, 시장 전체 동향, 그리고 트리거 퀘스천을 생성합니다."""
     if not OPENAI_API_KEY:
         return "분석 엔진 동기화가 진행 중입니다. 잠시 후 다시 확인해 주세요."
     
@@ -71,4 +69,42 @@ def get_market_briefing():
             "temperature": 0.4
         }
         
-        response = requests.post("
+        # 복사 시 줄바꿈 에러를 방지하기 위해 구문을 분리했습니다.
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=payload
+        )
+        
+        if response.status_code != 200:
+            return "분석 엔진 트래픽 과부하로 인해 요약 작업이 지연되었습니다."
+            
+        return response.json()['choices'][0]['message']['content']
+    except:
+        return "글로벌 뉴스망 동기화 지연으로 인해 요약 서비스가 일시 제한되었습니다."
+
+def get_crypto_report():
+    try:
+        cmc_url = "https://pro-api.coinmarketcap.com/v1/global-metrics/quotes/latest"
+        cmc_res = requests.get(cmc_url, headers={"X-CMC_PRO_API_KEY": CMC_API_KEY}).json()
+        btc_dom = cmc_res['data']['btc_dominance']
+        total_mcap = cmc_res['data']['quote']['USD']['total_market_cap']
+
+        upbit_res = requests.get("https://api.upbit.com/v1/ticker?markets=KRW-BTC").json()
+        upbit_price = float(upbit_res[0]['trade_price'])
+        
+        fng_res = requests.get("https://api.alternative.me/fng/").json()
+        fng_value = fng_res['data'][0]['value']
+        fng_status = fng_res['data'][0]['value_classification']
+
+        today = datetime.now().strftime('%Y-%m-%d %H:%M')
+        report =  f"■ <b>MY COIN DAILY REPORT</b>\n"
+        report += f"발행일시: {today}\n"
+        report += f"━━━━━━━━━━━━━━━━━━\n\n"
+        
+        report += f"<b>[비트코인 실시간 시세]</b>\n"
+        report += f"KRW: <b>{upbit_price:,.0f}원</b>\n\n"
+        
+        report += f"<b>[시장 주요 지표]</b>\n"
+        report += f"공포탐욕지수: {fng_value} ({fng_status})\n"
+        report += f"
