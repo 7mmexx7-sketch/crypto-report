@@ -2,9 +2,8 @@ name: Daily Crypto Report
 
 on:
   schedule:
-    # 한국 시간(KST) 아침 8시 30분 자동 발송
-    - cron: '30 23 * * *'
-  workflow_dispatch: # 직접 버튼 눌러 실행 옵션
+    - cron: '30 23 * * *' # 한국 시간 아침 8시 30분
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,6 +22,6 @@ jobs:
 
       - name: Run bot
         env:
-          # 바로 이 아래 줄이 뉴스 요약을 가능하게 하는 핵심 연결 고리입니다!
-          OPENAI_API_KEY: ${{ secrets.my_coin_report_bot }}
+          # 금고 이름과 배달 상자 이름을 모두 'OPENAI_API_KEY'로 통일!
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python bot.py
