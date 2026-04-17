@@ -1,28 +1,34 @@
-name: Daily Crypto Report Automation
+name: MY COIN DAILY REPORT AUTO
 
 on:
   schedule:
-    # 1. 한국 시간 오전 9:00 (UTC 00:00)
-    # 2. 한국 시간 오후 7:00 (UTC 10:00)
-    - cron: '0 0,10 * * *'
-  workflow_dispatch: # 수동 실행 버튼
+    # 한국 시간(KST) 오전 9시 발송을 위한 세팅
+    # (GitHub 서버 지연을 대비해 UTC 23시 50분으로 설정)
+    - cron: '50 23 * * *'
+  
+  # 원할 때 즉시 발송할 수 있는 수동 버튼 활성화
+  workflow_dispatch: 
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: 저장소 소스코드 불러오기
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
+    - name: 파이썬(Python) 환경 세팅
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-      - name: Install dependencies
-        run: pip install requests
+    - name: 필수 라이브러리 설치
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
 
-      - name: Run bot
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: python bot.py
+    - name: 리포트 자동 생성 및 텔레그램 발송
+      env:
+        # GitHub Secrets에 등록해둔 OpenAI 키를 불러옵니다.
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: python bot.py
